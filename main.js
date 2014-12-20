@@ -9,6 +9,8 @@ var mainState = {
         game.load.image('wallH', 'assets/wallHorizontal.png');
         
         game.load.image('coin', 'assets/coin.png');
+        
+        game.load.image('enemy', 'assets/enemy.png');
     },
     create: function() {
         // This function is called after the preload function
@@ -44,6 +46,17 @@ var mainState = {
                                         {font: '18px Arial', fill: '#ffffff'});
         // Initialize the score variable
         this.score = 0;
+        
+        // Create an enemy group with Arcade physics
+        this.enemies = game.add.group();
+        this.enemies.enableBody = true;
+        
+        // Create 10 enemies with the 'enemy' image in the group
+        // The enemies are 'dead' by default, so they are not visible in the game
+        this.enemies.createMultiple(10, 'enemy');
+        
+        // Call 'addEnemy' every 2.2 seconds
+        game.time.events.loop(2200, this.addEnemy, this);
     },
     update: function() {
         // This function is called 60 times per second
@@ -57,6 +70,12 @@ var mainState = {
         }
         
         game.physics.arcade.overlap(this.player, this.coin, this.takeCoin, null, this);
+        
+        // Make the enemies and wall collide
+        game.physics.arcade.collide(this.enemies, this.walls);
+        
+        // Call the 'playerDie' function when the player and enemy overlap
+        game.physics.arcade.overlap(this.player, this.enemies, this.playerDie, null, this);
     },
     
     // And here we will later add some of our own functions
@@ -150,6 +169,36 @@ var mainState = {
         
         // Set the new position of the coin
         this.coin.reset(newPosition.x, newPosition.y);
+    },
+    
+    addEnemy: function() {
+        // Get the first dead enemy of the group
+        var enemy = this.enemies.getFirstDead();
+        
+        // If there isn't any dead enemy, do nothing
+        if (!enemy) {
+            return;
+        }
+        
+        // Initialize the enemy
+        // Set the anchor point centered at the bottom
+        enemy.anchor.setTo(0.5, 1);
+        
+        // Put the enemy above the top hole
+        enemy.reset(game.world.centerX, 0);
+        
+        // Add gravity to see it fall
+        enemy.body.gravity.y = 500;
+        
+        // Make the enemy move either right or left, randomly
+        enemy.body.velocity.x = 100 * Phaser.Math.randomSign();
+        
+        // Bounce the enemy in the opposite direction when it hits a wall
+        enemy.body.bounce.x = 1;
+        
+        // Kill the enemy when it leave the game world
+        enemy.checkWorldBounds = true;
+        enemy.outOfBoundsKill = true;
     }
 };
 
